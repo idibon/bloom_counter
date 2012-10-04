@@ -21,6 +21,17 @@ class IdibloomCounterTest < Test::Unit::TestCase
     ("A".."Z").each {|x| counter.decrement(x, ?Z.ord) }
     ("A".."Z").each {|x| assert_equal counter[x], 0 }
   end
+
+  def test_save_load
+    counter = Idibloom::Counter.new :size => 1024, :expected => 26, :hashes => 8
+    ("A".."Z").each {|x| counter.increment(x, x.ord) }
+    f = File.open("tmp.db", "wb")
+    counter.save(f)
+    f.close()
+    f = File.open("tmp.db", "rb")
+    counter = Idibloom::Counter.load f, :expected => 26, :hashes => 8
+    ("A".."Z").each {|x| assert_equal counter[x], x.ord }
+  end
 end
 
 class IdibloomApproximateCounterTest < Test::Unit::TestCase

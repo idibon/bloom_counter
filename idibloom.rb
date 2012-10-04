@@ -4,13 +4,9 @@ module Idibloom
       @size = args[:size] || (1<<20)
       @counter = args[:counter] || default_counter
       @expected = args[:expected]
-      if @expected and not args[:hashes]
-        @hash_count = (@size * Math.log(2) / @expected.to_f).ceil
-      else
-        @hash_count = args[:hashes] || 4
-      end
       @counter_size = counter_size
       @filter = "\x00" * (@size * @counter_size)
+      set_hash_count args[:hashes]
     end
 
     def increment(key, step=1)
@@ -44,7 +40,7 @@ module Idibloom
 
     def self.load(f, args={})
       obj = self.new args
-      obj.filter = f.read()
+      obj.send(:set_filter, f.read(), args[:hashes])
       obj
     end
 
@@ -58,9 +54,18 @@ module Idibloom
       [0].pack(@counter).length
     end
 
-    def filter=(bytes)
+    def set_hash_count(hash_count)
+      if @expected and not hash_count
+        @hash_count = (@size * Math.log(2) / @expected.to_f).ceil
+      else
+        @hash_count = hash_count || 4
+      end
+    end
+
+    def set_filter (bytes, hash_count=nil)
       @filter = bytes
       @size = bytes.length / counter_size
+      set_hash_count(hash_count)
     end
 
     def byte_range(hash)
