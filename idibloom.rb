@@ -40,7 +40,12 @@ module Idibloom
 
     def self.load(f, args={})
       obj = self.new args
-      obj.send(:set_filter, f.read(), args[:hashes])
+      begin
+        f = File.open(f) if f.is_a? String
+        obj.send(:set_filter, f.read(), args[:hashes])
+      rescue Errno::ENOENT
+       raise unless args[:create]
+      end
       obj
     end
 
