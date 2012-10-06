@@ -174,5 +174,18 @@ module Idibloom
         @filter[byte_range(hash)] = [val.to_f].pack(@counter)
       end
     end
+
+    def [](key)
+      weights = {}
+      # what is the most frequent value for this key?
+      # count how often each value occurs.
+      hashes(key).each do |hash|
+        value = @filter[byte_range(hash)].unpack(@counter)
+        weights[value] = (weights[value] || 0) + 1
+      end
+      # sort on the frequencies and return the value that
+      # was found most often in the table.
+      weights.map{|k,v| [v,k]}.sort[-1][1]
+    end
   end
 end
