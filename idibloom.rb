@@ -26,6 +26,7 @@ module Idibloom
     end
 
     def save(f)
+      f = File.open(f, "wb") if f.is_a? String
       f.write(@filter)
     end
 
@@ -122,6 +123,56 @@ module Idibloom
       n = count(hash)
       n -= 1 while n > 0 and rand(1 << n) < step.abs
       n
+    end
+  end
+
+  class ExactCounter < Counter
+    def initialize(*args)
+      super *args
+      @keys = {}
+      @filter = nil
+    end
+
+    def increment(key, step=1)
+      @keys[key] ||= 0
+      @keys[key] += 1
+    end
+
+    def decrement(key, step=1)
+      @keys[key] ||= 0
+      @keys[key] -= 1
+      @keys[key] = 0 if @keys[key] < 0
+    end
+
+    def [](key)
+      @keys[key]
+    end
+
+    def save(f)
+      f = File.open(f, "wb") if f.is_a? String
+      f.write(JSON.generate @keys)
+    end
+
+    def to_a
+      @keys.values
+    end
+
+    protected
+
+    def set_filter (bytes, hash_count=nil)
+      @keys = JSON.parse bytes
+    end
+  end
+
+  class Weights < Counter
+    def default_counter
+      "g" # single-precision network-endian float
+    end
+
+    def []= (key, val)
+      hashes(key).each do |hash|
+        @filter[byte_range(hash)] = [val.to_f].pack(@counter)
+      end
     end
   end
 end
